@@ -1,0 +1,19 @@
+{
+  "uuid": "f1a2b3c4-d5e6-47f8-9abc-0123456789ab",
+  "shortName": "TxtReader",
+  "longName": "Pebble TXT Reader",
+  "companyName": "Generated",
+  "versionLabel": "1.0",
+  "sdkVersion": "4",
+  "watchapp": {
+    "watchface": false
+  },
+  "targetPlatforms": [
+    "aplite",
+    "basalt",
+    "chalk"
+  ],
+  "resources": {
+    "media": []
+  }
+}
