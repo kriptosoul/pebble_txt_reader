@@ -4,16 +4,19 @@
   "displayName": "TXT Reader",
   "uuid": "6be3e716-9c3a-4dbf-a5ab-6dc86053e42e",
   "sdkVersion": "4.5",
-  "targetPlatforms": ["basalt"],
+  "targetPlatforms": [
+    "basalt"
+  ],
   "watchapp": {
     "watchface": false
   },
   "resources": {
-    "media": []
+    "media": [
+      {
+        "type": "raw",
+        "name": "BOOK_TXT",
+        "file": "texts/book.txt"
+      }
+    ]
   }
-}
-{
-  "type": "raw",
-  "name": "BOOK_TXT",
-  "file": "texts/book.txt"
 }
