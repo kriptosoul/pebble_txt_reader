@@ -16,3 +16,8 @@
     "media": []
   }
 }
+{
+  "type": "raw",
+  "name": "BOOK_TXT",
+  "file": "texts/book.txt"
+}
