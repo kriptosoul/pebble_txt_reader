@@ -1,18 +1,17 @@
 {
-  "uuid": "f1a2b3c4-d5e6-47f8-9abc-0123456789ab",
-  "shortName": "TxtReader",
-  "longName": "Pebble TXT Reader",
-  "companyName": "Generated",
+  "uuid": "6be3e716-9c3a-4dbf-a5ab-6dc86053e42e",
+  "shortName": "TXT Reader",
+  "longName": "TXT Reader for Pebble",
+  "companyName": "Kriptosoul",
   "versionLabel": "1.0",
-  "sdkVersion": "4",
+  "sdkVersion": "4.5",
+  "targetPlatforms": [
+    "basalt"
+  ],
   "watchapp": {
     "watchface": false
   },
-  "targetPlatforms": [
-    "aplite",
-    "basalt",
-    "chalk"
-  ],
+  "appKeys": {},
   "resources": {
     "media": []
   }
