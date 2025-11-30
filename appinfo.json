@@ -1,0 +1,28 @@
+{
+  "uuid": "12345678-90ab-cdef-1234-567890abcdef",
+  "shortName": "TxtReader",
+  "longName": "TxtReader",
+  "companyName": "User",
+  "versionLabel": "1.0",
+  "sdkVersion": "4.5",
+  "targetPlatforms": [
+    "basalt"
+  ],
+  "watchapp": {
+    "watchface": false
+  },
+  "resources": {
+    "media": [
+      {
+        "type": "raw",
+        "name": "BOOK_TXT",
+        "file": "texts/book.txt"
+      },
+      {
+        "type": "raw",
+        "name": "ANOTHER_TXT",
+        "file": "texts/another.txt"
+      }
+    ]
+  }
+}
