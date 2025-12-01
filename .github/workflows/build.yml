@@ -2,43 +2,41 @@ name: Build Pebble App
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]   # <-- CAMBIA AQUÍ SI TU RAMA NO ES "main"
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
+    - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install system dependencies
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python2 python2-dev python-is-python2 git curl libfreetype6-dev libpng-dev zlib1g-dev cmake
+        sudo apt-get install -y python2 python2-dev python-is-python2 curl git libfreetype6-dev cmake
 
-    - name: Install Pebble SDK
+    - name: Install Pebble SDK 4.5
       run: |
-        mkdir -p ~/pebble-dev
+        mkdir ~/pebble-dev
         cd ~/pebble-dev
         curl -LO https://s3.amazonaws.com/assets.getpebble.com/sdk/release/sdk-4.5-linux64.tar.bz2
         tar -xjf sdk-4.5-linux64.tar.bz2
         mv pebble-sdk-4.5 pebble-sdk
-        echo 'export PATH=$PATH:~/pebble-dev/pebble-sdk/bin' >> ~/.bashrc
-        echo 'export PEBBLE_SDK=~/pebble-dev/pebble-sdk' >> ~/.bashrc
-        export PATH=$PATH:~/pebble-dev/pebble-sdk/bin
-        export PEBBLE_SDK=~/pebble-dev/pebble-sdk
+        echo "export PATH=$PATH:~/pebble-dev/pebble-sdk/bin" >> $GITHUB_ENV
+        echo "export PEBBLE_SDK=~/pebble-dev/pebble-sdk" >> $GITHUB_ENV
 
-    - name: Build Pebble App
+    - name: Build PBW
       run: |
         export PATH=$PATH:~/pebble-dev/pebble-sdk/bin
-        export PEBBLE_SDK=~/pebble-dev/pebble-sdk
-        pebble build --verbose
+        pebble build
 
     - name: Upload PBW artifact
       uses: actions/upload-artifact@v4
       with:
-        name: pebble_app
+        name: pebble-pbw
         path: build/*.pbw
+        retention-days: 30
