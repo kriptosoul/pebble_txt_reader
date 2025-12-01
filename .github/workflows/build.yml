@@ -1,8 +1,10 @@
 name: Build Pebble App
 
 on:
-  push:        # se ejecuta en cada push (cualquier rama)
-  workflow_dispatch:  # permite dispararlo manualmente desde la interfaz de GitHub
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
@@ -12,27 +14,21 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
-        sudo apt-get update -qq
-        sudo apt-get install -y python2 python2-dev python-is-python2 git curl cmake libfreetype6-dev
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi libstdc++-arm-none-eabi-newlib
 
-    - name: Install Pebble SDK 4.5
+    - name: Install Python & pebble-tool
       run: |
-        mkdir -p $HOME/pebble-dev && cd $HOME/pebble-dev
-        curl -LO https://s3.amazonaws.com/assets.getpebble.com/sdk/release/sdk-4.5-linux64.tar.bz2
-        tar -xjf sdk-4.5-linux64.tar.bz2
-        export PEBBLE_SDK="$HOME/pebble-dev/pebble-sdk-4.5"
-        export PATH="$PATH:$PEBBLE_SDK/bin"
+        python3 -m pip install --upgrade pip
+        pip3 install pebble-tool
 
-    - name: Build .pbw
-      run: |
-        export PEBBLE_SDK="$HOME/pebble-dev/pebble-sdk-4.5"
-        export PATH="$PATH:$PEBBLE_SDK/bin"
-        pebble build
+    - name: Show Pebble Tool version
+      run: pebble --version
 
-    - name: List build output
-      run: ls -R build || true
+    - name: Build application
+      run: pebble build
 
     - name: Upload PBW artifact
       uses: actions/upload-artifact@v4
