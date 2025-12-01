@@ -1,0 +1,42 @@
+name: Build Pebble App
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python2 python2-dev python-is-python2 git curl libfreetype6-dev cmake
+
+    - name: Install Pebble SDK
+      run: |
+        mkdir ~/pebble-dev && cd ~/pebble-dev
+        curl -LO https://s3.amazonaws.com/assets.getpebble.com/sdk/release/sdk-4.5-linux64.tar.bz2
+        tar -xjf sdk-4.5-linux64.tar.bz2
+        mv pebble-sdk-4.5 pebble-sdk
+        echo 'export PATH=$PATH:~/pebble-dev/pebble-sdk/bin' >> ~/.bashrc
+        echo 'export PEBBLE_SDK=~/pebble-dev/pebble-sdk' >> ~/.bashrc
+        export PATH=$PATH:~/pebble-dev/pebble-sdk/bin
+        export PEBBLE_SDK=~/pebble-dev/pebble-sdk
+
+    - name: Build app
+      run: |
+        export PATH=$PATH:~/pebble-dev/pebble-sdk/bin
+        pebble build
+
+    - name: Upload PBW artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: pebble_app
+        path: build/*.pbw
