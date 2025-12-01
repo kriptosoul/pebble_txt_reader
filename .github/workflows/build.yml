@@ -1,32 +1,41 @@
 name: Build Pebble App
 
 on:
-  push:
-  pull_request:
+  push:        # se ejecuta en cada push (cualquier rama)
+  workflow_dispatch:  # permite dispararlo manualmente desde la interfaz de GitHub
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Install Pebble SDK Docker
-        run: |
-          docker pull pebbledev/pebble-sdk
+    - name: Install dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y python2 python2-dev python-is-python2 git curl cmake libfreetype6-dev
 
-      - name: Build PBW
-        run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/pebble \
-            -w /pebble \
-            pebbledev/pebble-sdk \
-            pebble build
+    - name: Install Pebble SDK 4.5
+      run: |
+        mkdir -p $HOME/pebble-dev && cd $HOME/pebble-dev
+        curl -LO https://s3.amazonaws.com/assets.getpebble.com/sdk/release/sdk-4.5-linux64.tar.bz2
+        tar -xjf sdk-4.5-linux64.tar.bz2
+        export PEBBLE_SDK="$HOME/pebble-dev/pebble-sdk-4.5"
+        export PATH="$PATH:$PEBBLE_SDK/bin"
 
-      - name: Upload PBW artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pebble-app
-          path: build/*.pbw
-          if-no-files-found: error
+    - name: Build .pbw
+      run: |
+        export PEBBLE_SDK="$HOME/pebble-dev/pebble-sdk-4.5"
+        export PATH="$PATH:$PEBBLE_SDK/bin"
+        pebble build
+
+    - name: List build output
+      run: ls -R build || true
+
+    - name: Upload PBW artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pebble_app
+        path: build/*.pbw
