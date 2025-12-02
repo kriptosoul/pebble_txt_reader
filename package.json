@@ -1,0 +1,9 @@
+{
+  "name": "pebble-txt-reader-all",
+  "version": "1.2.0",
+  "pebble": {
+    "displayName": "TxtReader",
+    "uuid": "a1b2c3d4-e5f6-47a8-9012-abcdef123456",
+    "sdkVersion": "3"
+  }
+}

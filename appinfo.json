@@ -1,0 +1,28 @@
+{
+  "uuid": "a1b2c3d4-e5f6-47a8-9012-abcdef123456",
+  "shortName": "TxtReader",
+  "longName": "Pebble TXT Reader",
+  "companyName": "kriptosoul",
+  "versionLabel": "1.2",
+  "sdkVersion": "3",
+  "targetPlatforms": [
+    "basalt",
+    "chalk",
+    "diorite",
+    "emery"
+  ],
+  "watchapp": {
+    "watchface": false
+  },
+  "resources": {
+    "raw": [
+      {
+        "file": "resources/data/book.txt",
+        "name": "DATA_BOOK"
+      }
+    ]
+  },
+  "capabilities": [
+    "configurable"
+  ]
+}
