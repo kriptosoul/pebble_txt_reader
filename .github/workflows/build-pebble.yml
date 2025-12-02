@@ -25,13 +25,13 @@ jobs:
           pip3 install --upgrade pip
           pip3 install pebble-tool
 
-      - name: Install ARM GCC toolchain
+      - name: Install ARM GCC toolchain (Rebble mirror)
         run: |
-          wget -q https://developer.arm.com/-/media/Files/downloads/gnu-rm/4_9-2015q3/gnueabi/gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
-          tar -xf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
-          echo "$PWD/gcc-arm-none-eabi-4_9-2015q3/bin" >> $GITHUB_PATH
+          wget -q https://github.com/pebble-dev/arm-eabi-toolchain/releases/download/0.0.1/arm-cs-tools.tar.gz
+          tar -xzf arm-cs-tools.tar.gz
+          echo "$PWD/arm-cs-tools/bin" >> $GITHUB_PATH
 
-      - name: Configure SDK
+      - name: Install and activate Pebble SDK
         run: |
           pebble sdk install latest
           pebble sdk activate latest
