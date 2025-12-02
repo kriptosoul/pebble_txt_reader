@@ -2,41 +2,37 @@ name: Build Pebble App
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Install dependencies
+    - name: Install Python2 from deadsnakes
       run: |
+        sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt-get update
-        sudo apt-get install -y python2 python-is-python2 python2-dev git cmake curl libfreetype6-dev libpng-dev
+        sudo apt-get install -y python2 python2-dev
 
-    - name: Install ARM GCC Toolchain
+    - name: Install pip and pebble-tool
       run: |
-        wget -q https://developer.arm.com/-/media/Files/downloads/gnu-rm/4_9-2015q3/gnueabi/gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
-        tar -xf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
-        echo "$PWD/gcc-arm-none-eabi-4_9-2015q3/bin" >> $GITHUB_PATH
+        curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py
+        sudo python2 get-pip.py
+        sudo pip2 install pebble-tool
 
-    - name: Install Pebble SDK 4.7
+    - name: Install Pebble SDK
       run: |
-        wget -q https://github.com/pebble-dev/pebble-tool/releases/download/v4.7.0/pebble-sdk-4.7-linux64.tar.bz2
-        tar -xf pebble-sdk-4.7-linux64.tar.bz2
-        echo "$PWD/pebble-sdk-4.7-linux64/bin" >> $GITHUB_PATH
+        mkdir -p ~/pebble-dev
+        cd ~/pebble-dev
+        wget https://github.com/pebble-dev/pebble-toolchain/releases/download/v2.054/PebbleSDK-4.5-linux64.tar.bz2
+        tar -xjf PebbleSDK-4.5-linux64.tar.bz2
+        echo "export PATH=$PATH:~/pebble-dev/PebbleSDK-4.5/bin" >> ~/.bashrc
 
-    - name: Build PBW
+    - name: Build project
       run: |
         pebble build
-
-    - name: Upload PBW file
-      uses: actions/upload-artifact@v4
-      with:
-        name: Pebble-Build
-        path: build/*.pbw
