@@ -3,8 +3,6 @@ name: Build Pebble App
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
@@ -13,17 +11,32 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Python2 from deadsnakes
+    - name: Install Python2 manually
       run: |
-        sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt-get update
-        sudo apt-get install -y python2 python2-dev
+        sudo apt-get install -y wget build-essential libssl-dev zlib1g-dev \
+            libncurses5-dev libncursesw5-dev libreadline-dev libsqlite3-dev \
+            libgdbm-dev libdb5.3-dev libbz2-dev libexpat1-dev liblzma-dev tk-dev
 
-    - name: Install pip and pebble-tool
+        wget https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz
+        tar -xzf Python-2.7.18.tgz
+        cd Python-2.7.18
+
+        ./configure --prefix=/usr/local/python2
+        make -j4
+        sudo make altinstall
+
+        sudo ln -sf /usr/local/python2/bin/python2.7 /usr/bin/python2
+        sudo ln -sf /usr/local/python2/bin/python2.7 /usr/bin/python
+
+    - name: Install pip2
       run: |
-        curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py
+        curl https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py
         sudo python2 get-pip.py
-        sudo pip2 install pebble-tool
+
+    - name: Install pebble-tool
+      run: |
+        sudo pip2 install pebble-tool pyserial enum34
 
     - name: Install Pebble SDK
       run: |
@@ -31,8 +44,11 @@ jobs:
         cd ~/pebble-dev
         wget https://github.com/pebble-dev/pebble-toolchain/releases/download/v2.054/PebbleSDK-4.5-linux64.tar.bz2
         tar -xjf PebbleSDK-4.5-linux64.tar.bz2
+
         echo "export PATH=$PATH:~/pebble-dev/PebbleSDK-4.5/bin" >> ~/.bashrc
+        echo "export PATH=$PATH:~/pebble-dev/PebbleSDK-4.5/bin" >> $GITHUB_ENV
 
     - name: Build project
       run: |
+        ~/.bashrc
         pebble build
