@@ -13,22 +13,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip python3-setuptools \
                                   libfreetype6-dev libpng-dev git cmake gcc
 
-      - name: Install pebble-tool (rebble)
+      - name: Install pebble-tool (Python3)
         run: |
           pip3 install --upgrade pip
           pip3 install pebble-tool
 
-      - name: Install Pebble SDK (rebble)
+      - name: Install and activate Pebble SDK
         run: |
-          pebble sdk install latest || true
-          echo "SDK installed."
+          echo "Installing SDK latest..."
+          pebble sdk install latest
+          echo "Activating SDK..."
+          pebble sdk activate latest
+          echo "SDK installed and activated."
 
-      - name: Fix SDK path (important)
+      - name: Fix SDK environment variables
         run: |
-          echo "PE
+          echo "Setting SDK env vars..."
+          export PEBBLE_SDK_HOME="$HOME/.pebble-sdk"
+          echo "PEBBLE_SDK_HOME=$PEBBLE_SDK_HOME"
+
+      - name: Build Pebble app
+        run: |
+          echo "Building..."
+          pebble build
+
+      - name: Upload PBW artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: pebble_app
+          path: build/*.pbw
