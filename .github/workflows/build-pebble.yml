@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install system dependencies
         run: |
@@ -26,25 +26,16 @@ jobs:
 
       - name: Install and activate Pebble SDK
         run: |
-          echo "Installing SDK latest..."
           pebble sdk install latest
-          echo "Activating SDK..."
           pebble sdk activate latest
-          echo "SDK installed and activated."
-
-      - name: Fix SDK environment variables
-        run: |
-          echo "Setting SDK env vars..."
-          export PEBBLE_SDK_HOME="$HOME/.pebble-sdk"
-          echo "PEBBLE_SDK_HOME=$PEBBLE_SDK_HOME"
 
       - name: Build Pebble app
         run: |
-          echo "Building..."
           pebble build
 
       - name: Upload PBW artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pebble_app
           path: build/*.pbw
+          compression-level: 6
