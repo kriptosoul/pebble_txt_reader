@@ -1,3 +1,4 @@
+
 name: Build Pebble App
 
 on:
@@ -14,30 +15,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install Dependencies
+    - name: Install Pebble SDK (Docker)
       run: |
-        sudo dpkg --add-architecture i386
-        sudo apt-get update
-        sudo apt-get install -y \
-          python2 python-is-python2 python2-dev \
-          libc6:i386 libgcc1:i386 libstdc++6:i386 \
-          libfreetype6 libfreetype6-dev libpng-dev wget tar
-
-    - name: Install ARM GCC Toolchain
-      run: |
-        wget -q https://developer.arm.com/-/media/Files/downloads/gnu-rm/4_9-2015q3/gnueabi/gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
-        tar -xf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
-        echo "$PWD/gcc-arm-none-eabi-4_9-2015q3/bin" >> $GITHUB_PATH
-
-    - name: Install Pebble SDK 4.7
-      run: |
-        wget -q https://github.com/pebble-dev/pebble-tool/releases/download/v4.7.0/pebble-sdk-4.7-linux64.tar.bz2
-        tar -xf pebble-sdk-4.7-linux64.tar.bz2
-        echo "$PWD/pebble-sdk-4.7-linux64/bin" >> $GITHUB_PATH
-
-    - name: Build PBW
-      run: |
-        pebble build
+        docker run --rm \
+          -v ${{ github.workspace }}:/project \
+          pebbledev/pbl-build \
+          bash -c "cd /project && pebble build"
 
     - name: Upload PBW artifact
       uses: actions/upload-artifact@v4
