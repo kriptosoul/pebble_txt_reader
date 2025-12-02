@@ -1,0 +1,47 @@
+name: Build Pebble App
+
+on:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3 python3-pip python3-setuptools \
+            libfreetype6-dev libpng-dev gcc git cmake
+
+      - name: Install pebble-tool (rebble)
+        run: |
+          pip3 install --upgrade pip
+          pip3 install pebble-tool
+
+      - name: Install ARM GCC toolchain
+        run: |
+          wget -q https://developer.arm.com/-/media/Files/downloads/gnu-rm/4_9-2015q3/gnueabi/gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
+          tar -xf gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
+          echo "$PWD/gcc-arm-none-eabi-4_9-2015q3/bin" >> $GITHUB_PATH
+
+      - name: Configure SDK
+        run: |
+          pebble sdk install latest
+          pebble sdk activate latest
+
+      - name: Build PBW
+        run: |
+          pebble build
+
+      - name: Upload PBW artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pebble-app
+          path: build/*.pbw
