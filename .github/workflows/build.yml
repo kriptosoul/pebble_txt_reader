@@ -3,50 +3,27 @@ name: Build Pebble App
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-    - name: Install Python2 manually
+    - name: Build using Pebble Docker SDK
       run: |
-        sudo apt-get update
-        sudo apt-get install -y wget build-essential libssl-dev zlib1g-dev \
-            libncurses5-dev libncursesw5-dev libreadline-dev libsqlite3-dev \
-            libgdbm-dev libdb5.3-dev libbz2-dev libexpat1-dev liblzma-dev tk-dev
+        docker run --rm \
+          -v ${{ github.workspace }}:/project \
+          -w /project \
+          rebble/pebble-tool:latest \
+          pebble build
 
-        wget https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz
-        tar -xzf Python-2.7.18.tgz
-        cd Python-2.7.18
-
-        ./configure --prefix=/usr/local/python2
-        make -j4
-        sudo make altinstall
-
-        sudo ln -sf /usr/local/python2/bin/python2.7 /usr/bin/python2
-        sudo ln -sf /usr/local/python2/bin/python2.7 /usr/bin/python
-
-    - name: Install setuptools + wheel manually
-      run: |
-        wget https://files.pythonhosted.org/packages/1c/5a/ebcc0df3a0990353d363df23883228c166a4630bf8c1c58ddc3e39fb8b08/setuptools-44.1.1.zip
-        unzip setuptools-44.1.1.zip
-        cd setuptools-44.1.1
-        sudo python2 setup.py install
-
-        wget https://files.pythonhosted.org/packages/89/73/b1e0cdfc1aadc50bc75e03ceaddc01f20eaaf0d2fe5f0ebf71b0d76d5d8b/wheel-0.34.2.tar.gz
-        tar -xzf wheel-0.34.2.tar.gz
-        cd wheel-0.34.2
-        sudo python2 setup.py install
-
-    - name: Install pebble-tool manually
-      run: |
-        git clone https://github.com/pebble-dev/pebble-tool.git
-        cd pebble-tool
-        sudo python2 setup.py install
-
-    - name: Build PBW
-      run: |
-        pebble build
+    - name: Upload PBW artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pebble-app
+        path: build/*.pbw
