@@ -4,10 +4,13 @@
   "longName": "Pebble TXT Reader",
   "companyName": "User",
   "versionLabel": "1.3",
-  "sdkVersion": "3",
+  "sdkVersion": "3.0",
+  "appKeys": {},
   "targetPlatforms": [
+    "aplite",
     "basalt",
-    "chalk"
+    "chalk",
+    "emery"
   ],
   "watchapp": {
     "watchface": false
