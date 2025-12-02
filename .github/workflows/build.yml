@@ -29,26 +29,24 @@ jobs:
         sudo ln -sf /usr/local/python2/bin/python2.7 /usr/bin/python2
         sudo ln -sf /usr/local/python2/bin/python2.7 /usr/bin/python
 
-    - name: Install pip2
+    - name: Install setuptools + wheel manually
       run: |
-        curl https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py
-        sudo python2 get-pip.py
+        wget https://files.pythonhosted.org/packages/1c/5a/ebcc0df3a0990353d363df23883228c166a4630bf8c1c58ddc3e39fb8b08/setuptools-44.1.1.zip
+        unzip setuptools-44.1.1.zip
+        cd setuptools-44.1.1
+        sudo python2 setup.py install
 
-    - name: Install pebble-tool
+        wget https://files.pythonhosted.org/packages/89/73/b1e0cdfc1aadc50bc75e03ceaddc01f20eaaf0d2fe5f0ebf71b0d76d5d8b/wheel-0.34.2.tar.gz
+        tar -xzf wheel-0.34.2.tar.gz
+        cd wheel-0.34.2
+        sudo python2 setup.py install
+
+    - name: Install pebble-tool manually
       run: |
-        sudo pip2 install pebble-tool pyserial enum34
+        git clone https://github.com/pebble-dev/pebble-tool.git
+        cd pebble-tool
+        sudo python2 setup.py install
 
-    - name: Install Pebble SDK
+    - name: Build PBW
       run: |
-        mkdir -p ~/pebble-dev
-        cd ~/pebble-dev
-        wget https://github.com/pebble-dev/pebble-toolchain/releases/download/v2.054/PebbleSDK-4.5-linux64.tar.bz2
-        tar -xjf PebbleSDK-4.5-linux64.tar.bz2
-
-        echo "export PATH=$PATH:~/pebble-dev/PebbleSDK-4.5/bin" >> ~/.bashrc
-        echo "export PATH=$PATH:~/pebble-dev/PebbleSDK-4.5/bin" >> $GITHUB_ENV
-
-    - name: Build project
-      run: |
-        ~/.bashrc
         pebble build
