@@ -1,19 +1,24 @@
-name: Build Pebble App (Docker)
+name: Build Pebble App (Fixed)
+
 on:
   push:
     branches: ["**"]
   pull_request:
     branches: ["**"]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
     - name: Build Docker image
       run: docker build -t pebble-sdk-builder:latest .
-    - name: Run pebble build in container
+
+    - name: Build PBW
       run: docker run --rm -v ${{ github.workspace }}:/work pebble-sdk-builder:latest /bin/bash -lc "cd /work && pebble build"
+
     - name: Upload PBW
       uses: actions/upload-artifact@v4
       with:
