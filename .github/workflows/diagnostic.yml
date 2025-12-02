@@ -1,0 +1,13 @@
+name: Diagnostic Test
+
+on:
+  workflow_dispatch:   # Permite ejecutarlo manualmente
+  push:                # Se ejecuta con cada commit en cualquier rama
+    branches: ["**"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Say Hello
+        run: echo "GitHub Actions está funcionando correctamente."
