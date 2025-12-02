@@ -1,164 +1,201 @@
-
+\
 #include <pebble.h>
+#include <ctype.h>
 
-#define NUM_TEXTS 2
-#define KEY_SCROLL_0 1000
-#define KEY_SCROLL_1 1001
+#define PKEY_PAGE 1
+#define PKEY_FONT 2
+#define PKEY_THEME 3
 
-static Window *s_main_window;
-static MenuLayer *s_menu_layer;
-static Window *s_reader_window;
-static ScrollLayer *s_scroll_layer;
+#define DEFAULT_FONT_IDX 1  // 0=small,1=medium,2=large
+
+static Window *s_window;
 static TextLayer *s_text_layer;
+static char *s_book = NULL;
+static size_t s_book_len = 0;
+
+static int s_font_idx = DEFAULT_FONT_IDX;
+static bool s_theme_dark = false;
+static int s_current_page = 0;
+static int s_chars_per_page = 600; // will be recalculated
+
+static int s_total_pages = 0;
+
+static GFont font_small;
+static GFont font_medium;
+static GFont font_large;
 static GFont s_font;
 
-static char *s_text_buffer = NULL;
-static int s_current_index = 0;
-static int s_font_size_index = 1;
-
-static const char* s_text_names[NUM_TEXTS] = {
-  "Book.txt", "Another.txt"
-};
-static const uint32_t s_text_resource_ids[NUM_TEXTS] = {
-  RESOURCE_ID_BOOK_TXT,
-  RESOURCE_ID_ANOTHER_TXT
-};
-
-static void load_text(int idx) {
-  ResHandle h = resource_get_handle(s_text_resource_ids[idx]);
-  size_t size = resource_size(h);
-  if(s_text_buffer) free(s_text_buffer);
-  s_text_buffer = malloc(size+1);
-  resource_load(h, s_text_buffer, size);
-  s_text_buffer[size]=0;
+static void load_book() {
+  ResHandle rh = resource_get_handle(RESOURCE_ID_DATA_BOOK);
+  if (!rh) return;
+  s_book_len = (size_t)resource_size(rh);
+  s_book = malloc(s_book_len + 1);
+  if (s_book) {
+    resource_load(rh, s_book, s_book_len);
+    s_book[s_book_len] = '\0';
+  }
 }
 
-static void update_layout() {
-  GRect bounds = layer_get_bounds(window_get_root_layer(s_reader_window));
+static void free_book() {
+  if (s_book) free(s_book);
+  s_book = NULL;
+  s_book_len = 0;
+}
 
-  switch(s_font_size_index){
-    case 0: s_font = fonts_get_system_font(FONT_KEY_GOTHIC_18); break;
-    case 2: s_font = fonts_get_system_font(FONT_KEY_GOTHIC_28); break;
-    default: s_font = fonts_get_system_font(FONT_KEY_GOTHIC_24);
+static void save_state() {
+  persist_write_int(PKEY_PAGE, s_current_page);
+  persist_write_int(PKEY_FONT, s_font_idx);
+  persist_write_bool(PKEY_THEME, s_theme_dark);
+}
+
+static void load_state() {
+  if (persist_exists(PKEY_PAGE)) s_current_page = persist_read_int(PKEY_PAGE);
+  if (persist_exists(PKEY_FONT)) s_font_idx = persist_read_int(PKEY_FONT);
+  if (persist_exists(PKEY_THEME)) s_theme_dark = persist_read_bool(PKEY_THEME);
+}
+
+static void select_font_by_index(int idx) {
+  s_font_idx = idx;
+  switch(s_font_idx) {
+    case 0: s_font = font_small; s_chars_per_page = 400; break;
+    case 1: s_font = font_medium; s_chars_per_page = 600; break;
+    case 2: s_font = font_large; s_chars_per_page = 900; break;
+    default: s_font = font_medium; s_chars_per_page = 600; break;
   }
-
-  if(s_text_layer) text_layer_destroy(s_text_layer);
-  s_text_layer = text_layer_create(GRect(3,3,bounds.size.w-6,2000));
   text_layer_set_font(s_text_layer, s_font);
-  text_layer_set_text(s_text_layer, s_text_buffer);
+  // recompute total pages
+  if (s_book_len > 0) {
+    s_total_pages = (int)ceil((double)s_book_len / (double)s_chars_per_page);
+    if (s_current_page >= s_total_pages) s_current_page = s_total_pages - 1;
+    if (s_current_page < 0) s_current_page = 0;
+  }
+}
+
+static void update_page_text() {
+  if (!s_book) {
+    text_layer_set_text(s_text_layer, "No book found in resources.");
+    return;
+  }
+  int start = s_current_page * s_chars_per_page;
+  if (start < 0) start = 0;
+  if (start > (int)s_book_len) start = (int)s_book_len;
+  int len = s_chars_per_page;
+  if (start + len > (int)s_book_len) len = (int)s_book_len - start;
+  // create a temporary buffer trimmed to word boundary
+  int end = start + len;
+  while (end < (int)s_book_len && !isspace((unsigned char)s_book[end])) end++;
+  int chunk_len = end - start;
+  char *buf = malloc(chunk_len + 1);
+  if (!buf) return;
+  memcpy(buf, s_book + start, chunk_len);
+  buf[chunk_len] = '\0';
+  text_layer_set_text(s_text_layer, buf);
+  free(buf);
+}
+
+static void apply_theme() {
+  if (s_theme_dark) {
+    window_set_background_color(s_window, GColorBlack);
+    text_layer_set_text_color(s_text_layer, GColorWhite);
+  } else {
+    window_set_background_color(s_window, GColorWhite);
+    text_layer_set_text_color(s_text_layer, GColorBlack);
+  }
+}
+
+static void go_prev_page() {
+  if (s_current_page > 0) {
+    s_current_page--;
+    update_page_text();
+  }
+}
+
+static void go_next_page() {
+  if (s_current_page < s_total_pages - 1) {
+    s_current_page++;
+    update_page_text();
+  }
+}
+
+static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
+  go_prev_page();
+}
+
+static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
+  go_next_page();
+}
+
+// short select toggles theme; long select cycles font size
+static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
+  s_theme_dark = !s_theme_dark;
+  apply_theme();
+  save_state();
+}
+static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+  s_font_idx = (s_font_idx + 1) % 3;
+  select_font_by_index(s_font_idx);
+  update_page_text();
+  save_state();
+}
+
+static void click_config_provider(void *context) {
+  window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
+  window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
+  window_long_click_subscribe(BUTTON_ID_SELECT, 700, select_long_click_handler, NULL);
+}
+
+static void window_load(Window *window) {
+  Layer *root = window_get_root_layer(window);
+  GRect bounds = layer_get_bounds(root);
+
+  // fonts - use system fonts (no custom font selection)
+  font_small = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+  font_medium = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+  font_large = fonts_get_system_font(FONT_KEY_GOTHIC_24);
+
+  s_text_layer = text_layer_create(GRect(4, 0, bounds.size.w - 8, bounds.size.h));
   text_layer_set_overflow_mode(s_text_layer, GTextOverflowModeWordWrap);
+  text_layer_set_text_alignment(s_text_layer, GTextAlignmentLeft);
+  layer_add_child(root, text_layer_get_layer(s_text_layer));
 
-  GSize content = graphics_text_layout_get_content_size(
-    s_text_buffer, s_font,
-    GRect(0,0,bounds.size.w-6,2000),
-    GTextOverflowModeWordWrap, GTextAlignmentLeft
-  );
-  layer_set_frame(text_layer_get_layer(s_text_layer),
-                  GRect(3,3,bounds.size.w-6, content.h));
-
-  if(s_scroll_layer) scroll_layer_destroy(s_scroll_layer);
-  s_scroll_layer = scroll_layer_create(bounds);
-  scroll_layer_add_child(s_scroll_layer, text_layer_get_layer(s_text_layer));
-  scroll_layer_set_content_size(s_scroll_layer, GSize(bounds.size.w, content.h+6));
-
-  layer_add_child(window_get_root_layer(s_reader_window),
-                  scroll_layer_get_layer(s_scroll_layer));
-
-  // restore scroll offset
-  int key = (s_current_index==0)?KEY_SCROLL_0:KEY_SCROLL_1;
-  if(persist_exists(key)){
-    int y = persist_read_int(key);
-    scroll_layer_set_content_offset(s_scroll_layer, GPoint(0,y), false);
+  load_state();
+  load_book();
+  select_font_by_index(s_font_idx);
+  if (s_book_len > 0) {
+    s_total_pages = (int)ceil((double)s_book_len / (double)s_chars_per_page);
+    if (s_current_page >= s_total_pages) s_current_page = s_total_pages - 1;
+  } else {
+    s_total_pages = 1;
+    s_current_page = 0;
   }
+  update_page_text();
+  apply_theme();
 }
 
-static void up_click(ClickRecognizerRef r, void *ctx){
-  GPoint o = scroll_layer_get_content_offset(s_scroll_layer);
-  o.y -= 40;
-  if(o.y<0) o.y=0;
-  scroll_layer_set_content_offset(s_scroll_layer,o,true);
-}
-static void down_click(ClickRecognizerRef r, void *ctx){
-  GPoint o = scroll_layer_get_content_offset(s_scroll_layer);
-  o.y += 40;
-  scroll_layer_set_content_offset(s_scroll_layer,o,true);
-}
-static void select_click(ClickRecognizerRef r, void *ctx){
-  s_font_size_index=(s_font_size_index+1)%3;
-  update_layout();
+static void window_unload(Window *window) {
+  save_state();
+  text_layer_destroy(s_text_layer);
+  free_book();
 }
 
-static void click_config(void *ctx){
-  window_single_click_subscribe(BUTTON_ID_UP, up_click);
-  window_single_click_subscribe(BUTTON_ID_DOWN, down_click);
-  window_single_click_subscribe(BUTTON_ID_SELECT, select_click);
-}
-
-static void reader_load(Window *w){
-  update_layout();
-}
-static void reader_unload(Window *w){
-  // save scroll position
-  int key = (s_current_index==0)?KEY_SCROLL_0:KEY_SCROLL_1;
-  GPoint o = scroll_layer_get_content_offset(s_scroll_layer);
-  persist_write_int(key, o.y);
-
-  if(s_text_layer) text_layer_destroy(s_text_layer);
-  if(s_scroll_layer) scroll_layer_destroy(s_scroll_layer);
-}
-
-static void open_reader(int idx){
-  s_current_index = idx;
-  load_text(idx);
-
-  if(!s_reader_window){
-    s_reader_window = window_create();
-    window_set_window_handlers(s_reader_window, (WindowHandlers){
-      .load = reader_load,
-      .unload = reader_unload
-    });
-    window_set_click_config_provider(s_reader_window, click_config);
-  }
-  window_stack_push(s_reader_window,true);
-}
-
-static uint16_t menu_rows(MenuLayer *m, uint16_t sec, void *ctx){
-  return NUM_TEXTS;
-}
-static void menu_draw(GContext* ctx, const Layer *cell, MenuIndex *idx, void *ctx2){
-  menu_cell_basic_draw(ctx, cell, s_text_names[idx->row], NULL, NULL);
-}
-static void menu_select(MenuLayer *m, MenuIndex *idx, void *ctx){
-  open_reader(idx->row);
-}
-
-static void main_load(Window *w){
-  Layer *root = window_get_root_layer(w);
-  GRect b = layer_get_bounds(root);
-  s_menu_layer = menu_layer_create(b);
-  menu_layer_set_click_config_onto_window(s_menu_layer, w);
-  menu_layer_set_callbacks(s_menu_layer, NULL, (MenuLayerCallbacks){
-    .get_num_rows = menu_rows,
-    .draw_row = menu_draw,
-    .select_click = menu_select
+static void init(void) {
+  s_window = window_create();
+  window_set_window_handlers(s_window, (WindowHandlers){
+    .load = window_load,
+    .unload = window_unload
   });
-  layer_add_child(root, menu_layer_get_layer(s_menu_layer));
-}
-static void main_unload(Window *w){
-  menu_layer_destroy(s_menu_layer);
-  if(s_reader_window) window_destroy(s_reader_window);
-  if(s_text_buffer) free(s_text_buffer);
+  window_set_click_config_provider(s_window, click_config_provider);
+  window_stack_push(s_window, true);
 }
 
-static void init(){
-  s_main_window = window_create();
-  window_set_window_handlers(s_main_window,(WindowHandlers){
-    .load=main_load,
-    .unload=main_unload
-  });
-  window_stack_push(s_main_window,true);
+static void deinit(void) {
+  window_destroy(s_window);
 }
-static void deinit(){
-  window_destroy(s_main_window);
+
+int main(void) {
+  init();
+  app_event_loop();
+  deinit();
+  return 0;
 }
-int main(){ init(); app_event_loop(); deinit(); }
