@@ -16,27 +16,22 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            python3 python3-pip python3-setuptools \
-            libfreetype6-dev libpng-dev gcc git cmake
+          sudo apt-get install -y python3 python3-pip python3-setuptools \
+                                  libfreetype6-dev libpng-dev git cmake gcc
 
       - name: Install pebble-tool (rebble)
         run: |
           pip3 install --upgrade pip
           pip3 install pebble-tool
 
-      - name: Install ARM GCC toolchain (Rebble mirror)
-        run: |
-          wget -q https://github.com/pebble-dev/arm-eabi-toolchain/releases/download/0.0.1/arm-cs-tools.tar.gz
-          tar -xzf arm-cs-tools.tar.gz
-          echo "$PWD/arm-cs-tools/bin" >> $GITHUB_PATH
-
-      - name: Install and activate Pebble SDK
+      - name: Install Pebble SDK (rebble)
         run: |
           pebble sdk install latest
           pebble sdk activate latest
 
       - name: Build PBW
+        env:
+          PEBBLE_SDK_HOME: ~/.pebble-sdk
         run: |
           pebble build
 
