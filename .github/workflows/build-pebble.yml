@@ -16,20 +16,31 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3 python3-pip python3-setuptools \
-                                  libfreetype6-dev libpng-dev git cmake gcc
+          sudo apt-get install -y \
+            python3 python3-pip python3-setuptools \
+            libfreetype6-dev libpng-dev git cmake gcc
 
-      - name: Install pebble-tool (Python3)
+      - name: Install pebble-tool
         run: |
           pip3 install --upgrade pip
           pip3 install pebble-tool
 
-      - name: Install and activate Pebble SDK
+      - name: Prepare SDK folder (FIX)
         run: |
-          pebble sdk install latest
+          mkdir -p ~/.pebble-sdk
+          mkdir -p ~/.pebble-sdk/SDKs
+
+      - name: Install Pebble SDK (rebble)
+        run: |
+          pebble sdk install latest --force --debug
           pebble sdk activate latest
 
-      - name: Build Pebble app
+      - name: Verify SDKs
+        run: |
+          pebble sdk list
+          ls -R ~/.pebble-sdk/SDKs
+
+      - name: Build app
         run: |
           pebble build
 
@@ -38,4 +49,3 @@ jobs:
         with:
           name: pebble_app
           path: build/*.pbw
-          compression-level: 6
