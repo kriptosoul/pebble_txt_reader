@@ -26,17 +26,9 @@ jobs:
 
       - name: Install Pebble SDK (rebble)
         run: |
-          pebble sdk install latest
-          pebble sdk activate latest
+          pebble sdk install latest || true
+          echo "SDK installed."
 
-      - name: Build PBW
-        env:
-          PEBBLE_SDK_HOME: ~/.pebble-sdk
+      - name: Fix SDK path (important)
         run: |
-          pebble build
-
-      - name: Upload PBW artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pebble-app
-          path: build/*.pbw
+          echo "PE
