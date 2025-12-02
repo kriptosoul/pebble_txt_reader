@@ -1,37 +1,21 @@
-name: Build Pebble App
-
+name: Build Pebble App (Docker)
 on:
   push:
-    branches: [ main ]
+    branches: ["**"]
   pull_request:
-    branches: [ main ]
-
+    branches: ["**"]
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
+    - name: Checkout
       uses: actions/checkout@v4
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-none-eabi libstdc++-arm-none-eabi-newlib
-
-    - name: Install Python & pebble-tool
-      run: |
-        python3 -m pip install --upgrade pip
-        pip3 install pebble-tool
-
-    - name: Show Pebble Tool version
-      run: pebble --version
-
-    - name: Build application
-      run: pebble build
-
-    - name: Upload PBW artifact
+    - name: Build Docker image
+      run: docker build -t pebble-sdk-builder:latest .
+    - name: Run pebble build in container
+      run: docker run --rm -v ${{ github.workspace }}:/work pebble-sdk-builder:latest /bin/bash -lc "cd /work && pebble build"
+    - name: Upload PBW
       uses: actions/upload-artifact@v4
       with:
-        name: pebble_app
+        name: pbw
         path: build/*.pbw
