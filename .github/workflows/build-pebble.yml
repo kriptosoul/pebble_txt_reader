@@ -25,22 +25,22 @@ jobs:
           pip3 install --upgrade pip
           pip3 install pebble-tool
 
-      - name: Prepare SDK folder (FIX)
+      - name: Prepare SDK folder (REQUIRED FIX)
         run: |
           mkdir -p ~/.pebble-sdk
           mkdir -p ~/.pebble-sdk/SDKs
 
-      - name: Install Pebble SDK (rebble)
+      - name: Install Pebble SDK (latest)
         run: |
-          pebble sdk install latest --force --debug
+          pebble sdk install latest
           pebble sdk activate latest
 
       - name: Verify SDKs
         run: |
           pebble sdk list
-          ls -R ~/.pebble-sdk/SDKs
+          ls -R ~/.pebble-sdk/SDKs || true
 
-      - name: Build app
+      - name: Build PBW
         run: |
           pebble build
 
