@@ -14,12 +14,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Build using Pebble Docker SDK
+    - name: Build Pebble App inside Docker
       run: |
         docker run --rm \
-          -v ${{ github.workspace }}:/project \
-          -w /project \
-          rebble/pebble-tool:latest \
+          -v ${{ github.workspace }}:/app \
+          -w /app \
+          pebble-dev/pebble-sdk:latest \
           pebble build
 
     - name: Upload PBW artifact
