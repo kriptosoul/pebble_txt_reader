@@ -1,0 +1,23 @@
+name: Build Pebble App (container)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/your-username/pebble-sdk:latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build PBW
+        run: |
+          pebble build
+      - name: Upload PBW artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pebble_app
+          path: build/*.pbw
